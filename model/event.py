@@ -62,5 +62,3 @@ class EventDetail(Base):
     input_type_id = Column(Integer, ForeignKey("input_type.input_type_id"), nullable=True)
     
     alarm = relationship("Alarm", lazy="select")
-    
-    
