@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import timezone, datetime
 
 from fastapi import APIRouter, Depends, UploadFile, File
 from sqlalchemy.orm import Session
@@ -42,8 +42,12 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
     for component in cal.walk():
         if component.name == 'VEVENT':
             summary = str(component.get("SUMMARY"))
-            start_at = component.get("DTSTART").dt.astimezone(tz)
-            end_at = component.get("DTEND").dt.astimezone(tz)
+            start_at = component.get("DTSTART").dt
+            if type(start_at) == datetime:
+                start_at = start_at.astimezone(tz)
+            end_at = component.get("DTEND").dt
+            if type(end_at) == datetime:
+                end_at = end_at.astimezone(tz)
             created_at = component.get("CREATED").dt.astimezone(tz)
             last_modified = component.get("LAST-MODIFIED").dt.astimezone(tz)
             event_description = str(component.get("DESCRIPTION"))
@@ -70,6 +74,8 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
             for sub_com in component.subcomponents:
                 if sub_com.name == "VALARM":
                     action = str(sub_com.get("ACTION"))
+                    if action == "NONE":
+                        break
                     trigger = str(sub_com.get("TRIGGER").to_ical())[2:-1]
                     alarm_description = str(sub_com.get("DESCRIPTION"))
                     alarm = Alarm(action = action,
