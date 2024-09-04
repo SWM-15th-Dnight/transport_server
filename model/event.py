@@ -31,10 +31,11 @@ class EventMain(Base):
     end_at = Column(DateTime, nullable=False)
     priority = Column(Integer, nullable=False, default=5)
     repeat_rule = Column(String(255), nullable=True)
+    is_deleted = Column(Integer, nullable=False)
     
     calendar_id = Column(Integer, ForeignKey("calendars.calendar_id"), nullable=False)
     
-    calendar = relationship("Calendar", lazy = "select")
+    calendar = relationship("Calendars", lazy = "select")
     
     event_detail = relationship("EventDetail", back_populates="event_main", uselist=False, lazy= "select")
 
