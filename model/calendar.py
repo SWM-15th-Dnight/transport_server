@@ -3,8 +3,6 @@ from sqlalchemy.orm import relationship
 
 from config import Base
 
-from .user import User
-
 class ColorSet(Base):
     __tablename__ = "color_set"
     
@@ -12,7 +10,7 @@ class ColorSet(Base):
     color_name = Column(String(20), nullable=True)
     hex_code = Column(String(20), nullable=True)
 
-class Calendar(Base):
+class Calendars(Base):
     __tablename__ = "calendars"
     
     calendar_id = Column(Integer, primary_key=True)
