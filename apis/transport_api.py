@@ -106,23 +106,14 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
                     legacy_event_main.repeat_rule = new_event_main.repeat_rule
                     legacy_event_main.is_deleted = 0
                     
-                    # 알람 초기화 후, 이전 데이터가 존재할 경우 덮어 씌우기
+                    # 알람 초기화 후, 이전 데이터가 존재할 경우 덮어 씌우기1
                     alarm = None
                     if legacy_event_detail.alarm:
                         alarm = legacy_event_detail.alarm
                         
                     # 데이터가 없을 경우 새로 생성해서 삽입
                     else:
-                        for sub_com in component.subcomponents:
-                            if sub_com.name == "VALARM":
-                                try:
-                                    alarm = get_alarm(sub_com)
-                                    db.add(alarm)
-                                    db.flush()
-                                except:
-                                    alarm = None
-                                finally:
-                                    break
+                        alarm = get_alarm(component, db)
                     
                     # 이벤트 디테일은 이미 존재하는 것을 확인했으므로, 수정 사항 덮어 씌우기
                     event_detail : EventDetail = get_event_detail(component, event_main, alarm, tz)
@@ -158,17 +149,7 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
                     db.flush()
                 
                     # alarm은 None으로 초기화 후, 값이 생길 경우 db에 flush
-                    alarm = None
-                    for sub_com in component.subcomponents:
-                        if sub_com.name == "VALARM":
-                            try:
-                                alarm = get_alarm(sub_com)
-                                db.add(alarm)
-                                db.flush()
-                            except:
-                                alarm = None
-                            finally:
-                                break
+                    alarm = get_alarm(component, db)
                     
                     # event detail 새로 만들기
                     event_detail = get_event_detail(component, event_main, alarm, tz)

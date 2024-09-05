@@ -105,7 +105,7 @@ def get_event_detail(component: Icalendar, event_main: EventMain, alarm: Alarm, 
     
     return event_detail
 
-def get_alarm(subcomponents : Icalendar) -> Alarm:
+def get_alarm(component : Icalendar, db : Session) -> Alarm | None:
     """
     Alarm 객체를 생성함
     
@@ -113,12 +113,20 @@ def get_alarm(subcomponents : Icalendar) -> Alarm:
     
     그럴 경우 예외로 처리하고, none을 반환하여 연결된 알람을 없는 것으로 만듦.
     """
-    action = str(subcomponents.get("ACTION"))
-    if action == "NONE":
-        return None
-    trigger = str(subcomponents.get("TRIGGER").to_ical())[2:-1]
-    alarm_description = str(subcomponents.get("DESCRIPTION"))
-    alarm = Alarm(action = action,
-        description = alarm_description,
-        alarm_trigger = trigger)
-    return alarm
+    for sub_com in component.subcomponents:
+        if sub_com.name == "VALARM":
+            try:
+                action = str(sub_com.get("ACTION"))
+                if action == "NONE":
+                    return None
+                trigger = str(sub_com.get("TRIGGER").to_ical())[2:-1]
+                alarm_description = str(sub_com.get("DESCRIPTION"))
+                alarm = Alarm(action = action,
+                    description = alarm_description,
+                    alarm_trigger = trigger)
+                db.add(alarm)
+                db.flush()
+                return alarm
+            except:
+                alarm = None
+                break
