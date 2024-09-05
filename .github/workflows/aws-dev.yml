@@ -1,0 +1,84 @@
+name: transport server Deploy to Amazon ECR
+
+on:
+  push:
+    branches: [ "develop" ]
+
+env:
+  AWS_REGION: ap-northeast-2             # set this to your preferred AWS region, e.g. us-west-1
+  ECR_REPOSITORY: ${{ secrets.TRANSPORT_SERVER_ECR_REPOSITORY}}           # set this to your Amazon ECR repository name
+  EC2_HOST: ${{ secrets.CALINIFY_MONO_EC2_HOST }}
+  EC2_USER: ${{ secrets.CALINIFY_MONO_EC2_USER }}
+  EC2_PEM_KEY: ${{ secrets.CALINIFY_MONO_EC2_PEM_KEY }}
+  ECR_IAM_ACCESS_KEY: ${{ secrets.AWS_ECR_IAM_ACCESS_KEY }}
+  ECR_IAM_SECRET_KEY: ${{ secrets.AWS_ECR_IAM_SECRET_ACCESS_KEY }}
+  IMAGE_TAG: transport-server
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ env.ECR_IAM_ACCESS_KEY }}
+        aws-secret-access-key: ${{ env.ECR_IAM_SECRET_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+        
+    - name: Create .env file
+      run: |
+        echo "CALINIFY_DATABASE_HOST=${{ secrets.CALINIFY_DATABASE_HOST }}" >> ${{ env.IMAGE_TAG }}.env
+        echo "CALINIFY_DATABASE_PASSWORD=${{ secrets.CALINIFY_DATABASE_PASSWORD }}" >> ${{ env.IMAGE_TAG }}.env
+        echo "CALINIFY_DATABASE_PORT=${{ secrets.CALINIFY_DATABASE_PORT }}" >> ${{ env.IMAGE_TAG }}.env
+        echo "CALINIFY_DATABASE_TABLE_NAME=${{ secrets.CALINIFY_DATABASE_TABLE_NAME }}" >> ${{ env.IMAGE_TAG }}.env
+        echo "CALINIFY_DATABASE_USERNAME=${{ secrets.CALINIFY_DATABASE_USERNAME }}" >> ${{ env.IMAGE_TAG }}.env
+        echo "CALINIFY_TRANSPORT_SERVER_PROFILE=DEV" >> ${{ env.IMAGE_TAG }}.env
+        
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ env.EC2_PEM_KEY }}
+    
+    - name: Deploy Docker image to EC2
+      run: |       
+        # SSH into EC2 and run Docker commands
+        scp -o StrictHostKeyChecking=no ${{ env.IMAGE_TAG }}.env ${{ env.EC2_USER }}@${{ env.EC2_HOST }}:/home/${{ env.EC2_USER }}/${{ env.IMAGE_TAG }}.env
+        ssh -o StrictHostKeyChecking=no ${{ env.EC2_USER }}@${{ env.EC2_HOST }} << 'EOF'
+          # Login to ECR
+          aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+
+          sudo docker login -u AWS -p $(aws ecr get-login-password --region ap-northeast-2) ${{ steps.login-ecr.outputs.registry }}
+
+          # Pull the Docker image
+          sudo docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+
+          if sudo docker ps -a --format '{{.Names}}' | grep -q '^${{ env.IMAGE_TAG }}-dev$'; then
+            # Stop and remove the existing container
+            sudo docker stop ${{ env.IMAGE_TAG }}-dev
+            sudo docker rm ${{ env.IMAGE_TAG }}-dev
+          fi
+
+          # Run the new Docker container
+          sudo docker run -d --name ${{ env.IMAGE_TAG }}-dev --env-file /home/${{ env.EC2_USER }}/${{ env.IMAGE_TAG }}.env -p 5051:5051 ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+        EOF
