@@ -12,7 +12,7 @@ class ImportCalendar(Base):
     ics_file_path = Column(String)
     time_taken = Column(Float)
     fail_count = Column(Integer)
-    create_at = Column(DateTime, default=func.now())
+    created_at = Column(DateTime, default=func.now())
     
     calendar_id = Column(Integer, ForeignKey("calendars.calendar_id"))
     
