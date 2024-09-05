@@ -25,11 +25,12 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
         
     캘린더를 추출하는 데에 실패할 경우, 완전 실패로 처리하여 에러를 반환
     
-    개별 이벤트 추출에서 에러가 발생할 경우, event_main이 이미 만들어졌어도(flush) 롤백함
+    개별 이벤트 추출에서 에러가 발생할 경우, event_main이 이미 만들어졌어도(flush) 롤백한 뒤 에러 리포트를 작성하여 저장
     
     이벤트 내부의 알람은 최상위 하나만 가져오며, 에러가 발생하면 이벤트 생성은 진행하나, 연결된 알람이 없는 채로 생성됨
     
     :param user_id: 유저의 id, int값. 외부에 유출되지 않도록 유의
+    
     :param ics_file: icalendar 형식의 파일
     """
     start_time = time.time()

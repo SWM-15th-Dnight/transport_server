@@ -1,15 +1,22 @@
 import os
 
-from dotenv import dotenv_values
+profile = os.environ.get("CALINIFY_TRANSPORT_SERVER_PROFILE")
 
-ENV = dotenv_values(f'{os.path.dirname(__file__)}/.env')
+if profile in ["PROD", "DEV"]:
 
-DB_HOST = ENV["DB_HOST"]
-DB_USER = ENV["DB_USER"]
-DB_PASSWORD = ENV["DB_PASSWORD"]
-DB_PORT = ENV["DB_PORT"]
-DB_TABLE = ENV["DB_TABLE"]
+    DB_HOST = os.environ.get("CALINIFY_DATABASE_HOST")
+    DB_USERNAME = os.environ.get("CALINIFY_DATABASE_USERNAME")
+    DB_PASSWORD = os.environ.get("CALINIFY_DATABASE_PASSWORD")
+    DB_PORT = os.environ.get("CALINIFY_DATABASE_PORT")
+    DB_TABLE_NAME = os.environ.get("CALINIFY_DATABASE_TABLE_NAME")
 
-OPENAI_API_KEY = ENV["OPENAI_API_KEY"]
+else:
+    from dotenv import dotenv_values
 
-GPT_PLAIN_TEXT_MODEL = ENV["GPT_PLAIN_TEXT_MODEL"]
+    ENV = dotenv_values(f'{os.path.dirname(__file__)}/.env')
+
+    DB_HOST = ENV["CALINIFY_DATABASE_HOST"]
+    DB_USERNAME = ENV["CALINIFY_DATABASE_USERNAME"]
+    DB_PASSWORD = ENV["CALINIFY_DATABASE_PASSWORD"]
+    DB_PORT = ENV["CALINIFY_DATABASE_PORT"]
+    DB_TABLE_NAME = ENV["CALINIFY_DATABASE_TABLE_NAME"]

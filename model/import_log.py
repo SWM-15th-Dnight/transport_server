@@ -1,4 +1,4 @@
-from sqlalchemy import String, Column, Integer, ForeignKey, Float
+from sqlalchemy import String, Column, Integer, ForeignKey, Float, DateTime, func
 from sqlalchemy.orm import relationship
 
 from config import Base
@@ -12,6 +12,7 @@ class ImportCalendar(Base):
     ics_file_path = Column(String)
     time_taken = Column(Float)
     fail_count = Column(Integer)
+    create_at = Column(DateTime, default=func.now())
     
     calendar_id = Column(Integer, ForeignKey("calendars.calendar_id"))
     
@@ -22,6 +23,6 @@ class FailedImportEvent(Base):
     __tablename__ = "failed_import_event"
     
     failed_import_event_id = Column(Integer, primary_key=True, autoincrement=True)
-    log = Column(String(2047), nullable=False)
+    error_log = Column(String(8192), nullable=False)
     
     import_id = Column(Integer, ForeignKey("import_calendar.import_id"))
