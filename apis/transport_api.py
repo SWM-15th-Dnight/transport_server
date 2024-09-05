@@ -85,7 +85,7 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
                                          # ics_file_path = 
                                          )
         db.add(import_calendar)
-        db.flush
+        db.flush()
         error_log = FailedImportEvent(import_id = import_calendar.import_id,
                                       error_log = e)
         
