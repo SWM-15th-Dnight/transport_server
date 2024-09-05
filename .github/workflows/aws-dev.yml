@@ -12,7 +12,7 @@ env:
   EC2_PEM_KEY: ${{ secrets.CALINIFY_MONO_EC2_PEM_KEY }}
   ECR_IAM_ACCESS_KEY: ${{ secrets.AWS_ECR_IAM_ACCESS_KEY }}
   ECR_IAM_SECRET_KEY: ${{ secrets.AWS_ECR_IAM_SECRET_ACCESS_KEY }}
-  IMAGE_TAG: transport-server
+  IMAGE_TAG: dev-transport-server
 
 permissions:
   contents: read
@@ -48,11 +48,11 @@ jobs:
         
     - name: Create .env file
       run: |
-        echo "CALINIFY_DATABASE_HOST=${{ secrets.CALINIFY_DATABASE_HOST }}" >> ${{ env.IMAGE_TAG }}.env
-        echo "CALINIFY_DATABASE_PASSWORD=${{ secrets.CALINIFY_DATABASE_PASSWORD }}" >> ${{ env.IMAGE_TAG }}.env
-        echo "CALINIFY_DATABASE_PORT=${{ secrets.CALINIFY_DATABASE_PORT }}" >> ${{ env.IMAGE_TAG }}.env
-        echo "CALINIFY_DATABASE_TABLE_NAME=${{ secrets.CALINIFY_DATABASE_TABLE_NAME }}" >> ${{ env.IMAGE_TAG }}.env
-        echo "CALINIFY_DATABASE_USERNAME=${{ secrets.CALINIFY_DATABASE_USERNAME }}" >> ${{ env.IMAGE_TAG }}.env
+        echo "CALINIFY_DEV_DATABASE_HOST=${{ secrets.CALINIFY_DEV_DATABASE_HOST }}" >> ${{ env.IMAGE_TAG }}.env
+        echo "CALINIFY_DEV_DATABASE_PASSWORD=${{ secrets.CALINIFY_DEV_DATABASE_PASSWORD }}" >> ${{ env.IMAGE_TAG }}.env
+        echo "CALINIFY_DEV_DATABASE_PORT=${{ secrets.CALINIFY_DEV_DATABASE_PORT }}" >> ${{ env.IMAGE_TAG }}.env
+        echo "CALINIFY_DEV_DATABASE_TABLE_NAME=${{ secrets.CALINIFY_DEV_DATABASE_TABLE_NAME }}" >> ${{ env.IMAGE_TAG }}.env
+        echo "CALINIFY_DEV_DATABASE_USERNAME=${{ secrets.CALINIFY_DEV_DATABASE_USERNAME }}" >> ${{ env.IMAGE_TAG }}.env
         echo "CALINIFY_TRANSPORT_SERVER_PROFILE=DEV" >> ${{ env.IMAGE_TAG }}.env
         
     - name: Setup SSH
