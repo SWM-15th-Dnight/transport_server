@@ -63,7 +63,8 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
         else:
             db.add(calendar)
             db.flush()
-            
+        
+        # 캘린더 정보 입력
         calendar_id = calendar.calendar_id
         import_calendar = ImportCalendar(calendar_id = calendar_id,
                 # ics_file_path =
@@ -74,13 +75,20 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
         db.add(import_calendar)
         db.commit()
         
-    except:
+    except Exception as e:
+        error_trace = traceback.format_exc().replace("\n", "").replace("  ", " ")
+        error_log = error_trace[error_trace.index("line"):]
+        
         # 실패 시, 이전 동작에 대한 롤백 진행 후 예외 반환
         db.rollback()
         import_calendar = ImportCalendar(is_success = 0,
                                          # ics_file_path = 
                                          )
         db.add(import_calendar)
+        db.flush
+        error_log = FailedImportEvent(import_id = import_calendar.import_id,
+                                      error_log = e)
+        
         db.commit()
         raise HTTPException(422, detail="캘린더 생성 실패")
     
@@ -98,7 +106,7 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
             if legacy_event_detail:
                 try:
                     legacy_event_main: EventMain = legacy_event_detail.event_main
-                    new_event_main: EventMain = get_event_main(component, calendar_id)
+                    new_event_main: EventMain = get_event_main(component, calendar_id, tz)
                     
                     legacy_event_main.summary = new_event_main.summary
                     legacy_event_main.start_at = new_event_main.start_at
@@ -132,7 +140,7 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
                     error_trace = traceback.format_exc().replace("\n", "").replace("  ", " ")
                     error_log = error_trace[error_trace.index("line"):]    
                     failed_import_event = FailedImportEvent(import_id = import_id,
-                                                            log = error_log)
+                                                            error_log = error_log)
                     
                     fail_cnt += 1
                     
@@ -167,7 +175,7 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
                     db.rollback()
                     
                     failed_import_event = FailedImportEvent(import_id = import_id,
-                                                            log = error_log)
+                                                            error_log = error_log)
                     
                     fail_cnt += 1
                     
