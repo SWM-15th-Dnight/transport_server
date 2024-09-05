@@ -88,7 +88,7 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
         db.flush()
         error_log = FailedImportEvent(import_id = import_calendar.import_id,
                                       error_log = e)
-        
+        db.add(error_log)
         db.commit()
         raise HTTPException(422, detail="캘린더 생성 실패")
     
