@@ -58,6 +58,9 @@ class EventDetail(Base):
     status = Column(Enum(Status), default=Status.CONFIRMED)
     transp = Column(Enum(Transp), default=Transp.OPAQUE)
     input_time_taken = Column(Float, nullable=False)
+    is_deleted = Column(Integer, default=0)
+    # TODO 컬러셋 기본값 정하기...
+    color_set_id = Column(Integer, default=1)
     
     alarm_id = Column(Integer, ForeignKey('alarm.alarm_id'), nullable=True)
     input_type_id = Column(Integer, ForeignKey("input_type.input_type_id"), nullable=True)

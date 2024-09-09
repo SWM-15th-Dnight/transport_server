@@ -22,7 +22,8 @@ class Calendars(Base):
     is_deleted = Column(Integer, nullable=False, default=0)
     prod_id = Column(String(255), nullable=False)
     
-    color_set_id = Column(Integer, ForeignKey("color_set.color_set_id"))
+    #TODO color_set 값 로직 정하기
+    color_set_id = Column(Integer, ForeignKey("color_set.color_set_id"), default=1)
     user_id = Column(Integer, ForeignKey("user.user_id"))
     
     color_set = relationship("ColorSet")

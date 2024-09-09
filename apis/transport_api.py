@@ -125,13 +125,13 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
                         alarm = get_alarm(component, db)
                     
                     # 이벤트 디테일은 이미 존재하는 것을 확인했으므로, 수정 사항 덮어 씌우기
-                    event_detail : EventDetail = get_event_detail(component, event_main, alarm, tz)
+                    new_event_detail : EventDetail = get_event_detail(component, legacy_event_main, alarm, tz)
                     legacy_event_detail.alarm = alarm
-                    legacy_event_detail.description = event_detail.description
-                    legacy_event_detail.location = event_detail.location
-                    legacy_event_detail.sequence = event_detail.sequence
-                    legacy_event_detail.status = event_detail.status
-                    legacy_event_detail.transp = event_detail.transp
+                    legacy_event_detail.description = new_event_detail.description
+                    legacy_event_detail.location = new_event_detail.location
+                    legacy_event_detail.sequence = new_event_detail.sequence
+                    legacy_event_detail.status = new_event_detail.status
+                    legacy_event_detail.transp = new_event_detail.transp
                     
                     event_cnt += 1
                 except:
