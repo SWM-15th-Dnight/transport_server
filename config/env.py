@@ -2,7 +2,7 @@ import os
 
 profile = os.environ.get("CALINIFY_TRANSPORT_SERVER_PROFILE")
 
-if profile == "PROD":
+if profile == "DEV" or profile == "PROD":
 
     DB_HOST = os.environ.get("CALINIFY_PROD_DATABASE_HOST")
     DB_USERNAME = os.environ.get("CALINIFY_PROD_DATABASE_USERNAME")
