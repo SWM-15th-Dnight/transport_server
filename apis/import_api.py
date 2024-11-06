@@ -1,5 +1,5 @@
+import uuid
 import traceback
-from datetime import timezone, datetime
 import time
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
@@ -13,6 +13,7 @@ from config import get_db
 from model import Calendars, User, EventMain, EventDetail, Alarm, FailedImportEvent, ImportCalendar
 from .import_module import get_calendar, get_alarm, get_event_main, get_event_detail
 from dto import ImportResonseDTO
+from .s3_module import s3_bucket
 
 router = APIRouter()
 
@@ -38,8 +39,6 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
     ics_file_content = await ics_file.read()
     
     cal = Icalendar.from_ical(ics_file_content)
-    
-    #TODO ics 파일 저장
     
     # 캘린더 추출에서 성공/실패 여부 상관 없이 ImportCalendar에 대한 로그 생성
     try:
@@ -77,17 +76,17 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
         
     except Exception as e:
         error_trace = traceback.format_exc().replace("\n", "").replace("  ", " ")
-        error_log = error_trace[error_trace.index("line"):]
+        main_trace = error_trace[error_trace.rfind("line"):]
         
         # 실패 시, 이전 동작에 대한 롤백 진행 후 예외 반환
         db.rollback()
         import_calendar = ImportCalendar(is_success = 0,
-                                         # ics_file_path = 
+                                        #  TODO
                                          )
         db.add(import_calendar)
         db.flush()
         error_log = FailedImportEvent(import_id = import_calendar.import_id,
-                                      error_log = e)
+                                      error_log = main_trace)
         db.add(error_log)
         db.commit()
         raise HTTPException(422, detail="캘린더 생성 실패")
@@ -170,7 +169,7 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
                     
                 except:
                     error_trace = traceback.format_exc().replace("\n", "").replace("  ", " ")
-                    error_log = error_trace[error_trace.index("line"):]
+                    error_log = error_trace[error_trace.rfind("line"):]
                     
                     db.rollback()
                     

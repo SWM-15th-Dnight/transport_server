@@ -6,8 +6,8 @@ from sqlalchemy.orm import relationship
 from config import Base
 
 class Gender(PEnum):
-    MALE = "MALE"
-    FEMALE = "FEMALE"
+    male = "male"
+    female = "female"
 
 
 class AccountLink(Base):

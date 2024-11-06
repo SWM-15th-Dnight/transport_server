@@ -1,11 +1,12 @@
 import uvicorn
 from fastapi import FastAPI
 
-from apis import transport_router
+from apis import import_ics, export_ics
 
 app = FastAPI()
 
-app.include_router(transport_router, prefix="/api", tags=["event_transport"])
+app.include_router(import_ics, prefix="/api/v1", tags=["event_transport"])
+app.include_router(export_ics, prefix="/api/v1", tags=["event_transport"])
 
 @app.get("/")
 def index():

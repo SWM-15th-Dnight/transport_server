@@ -130,3 +130,4 @@ def get_alarm(component : Icalendar, db : Session) -> Alarm | None:
             except:
                 alarm = None
                 break
+    return None
