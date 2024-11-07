@@ -1,0 +1,126 @@
+name: PROD - transport server Deploy to Amazon ECR
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: ${{ secrets.TRANSPORT_SERVER_ECR_REPOSITORY }}
+  BASTION_HOST : ${{ secrets.BASTION_HOST }}
+  BASTION_USER : ${{ secrets.BASTION_USER }}
+  PRIVATE_TRANSPORT_HOST: ${{ secrets.PRIVATE_TRANSPORT_HOST }}
+  PRIVATE_TRANSPORT_USER: ${{ secrets.PRIVATE_TRANSPORT_USER }}
+
+  BASTION_PEM : ${{ secrets.BASTOIN_PEM }}
+  PRIVATE_TRANSPORT_PEM : ${{ secrets.PRIVATE_TRANSPORT_PEM }}
+
+  IMAGE_TAG: transport-server
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ECR_IAM_ACCESS_KEY }}
+        aws-secret-access-key: ${{ secrets.AWS_ECR_IAM_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      run: |
+        docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }} .
+        docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ env.BASTION_PEM }}
+    
+    - name: Deploy Docker image to EC2
+      run: |       
+        # SSH into Bastion and setup for Private EC2 access
+        ssh -o StrictHostKeyChecking=no ${{ env.BASTION_USER }}@${{ env.BASTION_HOST }} << 'EOF'
+        
+          # Private EC2에 접근할 PEM 키 파일 생성
+          echo "=====pem key 파일 생성====="
+          echo "${{ env.PRIVATE_TRANSPORT_PEM }}" > PRIVATE_TRANSPORT_key.pem
+          chmod 600 PRIVATE_TRANSPORT_key.pem
+          echo "=====pem key 파일 생성 완료====="
+        
+          # 내부에서 사용할 env 파일 생성
+          echo "=====.env 파일 생성====="
+          touch .env
+          echo "CALINIFY_DATABASE_HOST=${{ secrets.PROD_DB_HOST }}" >> .env
+          echo "CALINIFY_DATABASE_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> .env
+          echo "CALINIFY_DATABASE_PORT=${{ secrets.PROD_DB_PORT }}" >> .env
+          echo "CALINIFY_DATABASE_TABLE_NAME=${{ secrets.PROD_DB_TABLE_NAME }}" >> .env
+          echo "CALINIFY_DATABASE_USERNAME=${{ secrets.PROD_DB_USERNAME }}" >> .env
+          echo "S3_IAM_ACCESS_KEY=${{ secrets.PROD_S3_IAM_ACCESS_KEY }}" >> .env
+          echo "S3_IAM_SECRET_KEY=${{ secrets.PROD_S3_IAM_SECRET_KEY }}" >> .env
+          echo "S3_BUCKET_NAME=${{ secrets.PROD_S3_BUCKET_NAME }}" >> .env
+          # 배포 프로필 설정
+          echo "CALINIFY_TRANSPORT_SERVER_PROFILE=PROD" >> .env
+          echo "=====.env 파일 생성 완료====="
+        
+          # Private EC2에 env 파일과 키 파일 전송
+          ehco "=====.env 파일 및 pem key 전송====="
+          scp -i PRIVATE_TRANSPORT_key.pem -o StrictHostKeyChecking=no .env PRIVATE_TRANSPORT_key.pem ${{ env.PRIVATE_TRANSPORT_USER }}@${{ env.PRIVATE_TRANSPORT_HOST }}:/home/${{ env.PRIVATE_TRANSPORT_USER }}/
+          echo "=====전송 완료====="
+
+          # .env 파일 삭제
+          echo "=====bastion .env 파일 삭제====="
+          rm -f .env
+        
+          # Private EC2에서 Docker 명령어 실행
+          echo "=====Private ec2 server 진입====="
+          ssh -i PRIVATE_TRANSPORT_key.pem -o StrictHostKeyChecking=no ${{ env.PRIVATE_TRANSPORT_USER }}@${{ env.PRIVATE_TRANSPORT_HOST }} << 'INNER_EOF'
+        
+            # Login to ECR
+            echo "=====Private ec2 server 진입 성공 및 ECR login===="
+            aws ecr get-login-password --region ap-northeast-2 | sudo docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            echo "=====ECR login 성공====="
+        
+            # Pull the Docker image
+            echo "=====Docker image pull====="
+            sudo docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            echo "=====Docker image pull success====="
+        
+            # 중복된 Docker 컨테이너 삭제
+            echo "=====중복된 컨테이너 삭제====="
+            if sudo docker ps -a --format '{{.Names}}' | grep -q '^transport-server$'; then
+              sudo docker stop transport-server
+              sudo docker rm transport-server
+            fi
+            echo "=====중복 컨테이너 삭제 완료====="
+        
+            # Run the new Docker container
+            echo "=====Docker container 시작====="
+            sudo docker run -d --name TRANSPORT-server --env-file /home/${{ env.PRIVATE_TRANSPORT_USER }}/.env -p 5050:5050 ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            echo "=====Docker run 성공===="
+            
+            rm -f /home/${{ env.PRIVATE_TRANSPORT_USER }}/.env
+            echo "=====.env 파일 삭제======"
+        
+          INNER_EOF
+
+          echo "=====bastion pem 키 삭제====="
+          rm -f PRIVATE_TRANSPORT_key.pem
+
+        EOF

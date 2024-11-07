@@ -1,4 +1,4 @@
-import uuid
+from uuid import uuid4
 import traceback
 import time
 
@@ -40,6 +40,7 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
     
     cal = Icalendar.from_ical(ics_file_content)
     
+    calendar_uid = uuid4()
     # 캘린더 추출에서 성공/실패 여부 상관 없이 ImportCalendar에 대한 로그 생성
     try:
         # 캘린더 추출
@@ -65,10 +66,9 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
         
         # 캘린더 정보 입력
         calendar_id = calendar.calendar_id
+
         import_calendar = ImportCalendar(calendar_id = calendar_id,
-                # ics_file_path =
-                
-                # TODO s3로 삽입
+                uid = calendar_uid
                 )
         
         db.add(import_calendar)
@@ -81,7 +81,7 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
         # 실패 시, 이전 동작에 대한 롤백 진행 후 예외 반환
         db.rollback()
         import_calendar = ImportCalendar(is_success = 0,
-                                        #  TODO
+                                         uid = calendar_uid
                                          )
         db.add(import_calendar)
         db.flush()
