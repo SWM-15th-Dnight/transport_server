@@ -1,15 +1,15 @@
-from sqlalchemy import String, Column, Integer, ForeignKey, DateTime, func
-from sqlalchemy.orm import relationship
+from sqlalchemy import String, Integer, ForeignKey, DateTime, func
+from sqlalchemy.orm import relationship, mapped_column
 
 from config import Base
 
 class ExportCalendar(Base):
     __tablename__ = "export_calendar"
     
-    export_id = Column(Integer, primary_key=True, autoincrement=True)
-    event_count = Column(Integer, default=0, nullable=False)
-    export_uid = Column(String)
-    created_at = Column(DateTime, default=func.now())
+    export_id = mapped_column(Integer, primary_key=True, autoincrement=True)
+    event_count = mapped_column(Integer, default=0, nullable=False)
+    export_uid = mapped_column(String)
+    created_at = mapped_column(DateTime, default=func.now())
     
-    calendar_id = Column(Integer, ForeignKey("calendars.calendar_id"))
+    calendar_id = mapped_column(Integer, ForeignKey("calendars.calendar_id"))
     calendar = relationship("Calendars")

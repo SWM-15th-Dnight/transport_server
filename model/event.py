@@ -1,7 +1,7 @@
 from enum import Enum as PEnum
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, func, Float, Enum
-from sqlalchemy.orm import relationship
+from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, func, Float, Enum
+from sqlalchemy.orm import relationship, mapped_column
 
 from config import Base
 
@@ -18,22 +18,22 @@ class Transp(PEnum):
 class InputType(Base):
     __tablename__ = "input_type"
     
-    input_type_id = Column(Integer, primary_key=True, autoincrement=True)
-    input_type = Column(String, nullable=False)
+    input_type_id = mapped_column(Integer, primary_key=True, autoincrement=True)
+    input_type = mapped_column(String, nullable=False)
     
 
 class EventMain(Base):
     __tablename__ = "event_main"
     
-    event_id = Column(Integer, primary_key=True, autoincrement=True)
-    summary = Column(String(50), nullable=False)
-    start_at = Column(DateTime, nullable=False)
-    end_at = Column(DateTime, nullable=False)
-    priority = Column(Integer, nullable=False, default=5)
-    repeat_rule = Column(String(255), nullable=True)
-    is_deleted = Column(Integer, nullable=False)
+    event_id = mapped_column(Integer, primary_key=True, autoincrement=True)
+    summary = mapped_column(String(50), nullable=False)
+    start_at = mapped_column(DateTime, nullable=False)
+    end_at = mapped_column(DateTime, nullable=False)
+    priority = mapped_column(Integer, nullable=False, default=5)
+    repeat_rule = mapped_column(String(255), nullable=True)
+    is_deleted = mapped_column(Integer, nullable=False)
     
-    calendar_id = Column(Integer, ForeignKey("calendars.calendar_id"), nullable=False)
+    calendar_id = mapped_column(Integer, ForeignKey("calendars.calendar_id"), nullable=False)
     
     calendar = relationship("Calendars", lazy = "select")
     
@@ -46,20 +46,20 @@ class EventDetail(Base):
     """
     __tablename__ = "event_detail"
     
-    event_detail_id = Column(Integer, ForeignKey('event_main.event_id'), primary_key=True)
+    event_detail_id = mapped_column(Integer, ForeignKey('event_main.event_id'), primary_key=True)
     event_main = relationship("EventMain", back_populates="event_detail", lazy="select")
     
-    uid = Column(String(255), unique=True)
-    sequence = Column(Integer, default=0)
-    description = Column(String(2047), nullable=True)
-    created_at = Column(DateTime, default=func.current_timestamp())
-    updated_at = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp())
-    location = Column(String(255), nullable=True)
-    status = Column(Enum(Status), default=Status.CONFIRMED)
-    transp = Column(Enum(Transp), default=Transp.OPAQUE)
-    input_time_taken = Column(Float, nullable=False)
+    uid = mapped_column(String(255), unique=True)
+    sequence = mapped_column(Integer, default=0)
+    description = mapped_column(String(2047), nullable=True)
+    created_at = mapped_column(DateTime, default=func.current_timestamp())
+    updated_at = mapped_column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp())
+    location = mapped_column(String(255), nullable=True)
+    status = mapped_column(Enum(Status), default=Status.CONFIRMED)
+    transp = mapped_column(Enum(Transp), default=Transp.OPAQUE)
+    input_time_taken = mapped_column(Float, nullable=False)
     
-    alarm_id = Column(Integer, ForeignKey('alarm.alarm_id'), nullable=True)
-    input_type_id = Column(Integer, ForeignKey("input_type.input_type_id"), nullable=True)
+    alarm_id = mapped_column(Integer, ForeignKey('alarm.alarm_id'), nullable=True)
+    input_type_id = mapped_column(Integer, ForeignKey("input_type.input_type_id"), nullable=True)
     
     alarm = relationship("Alarm", lazy="select")
