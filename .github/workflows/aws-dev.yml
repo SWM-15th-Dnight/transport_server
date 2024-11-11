@@ -12,7 +12,7 @@ env:
   EC2_PEM_KEY: ${{ secrets.CALINIFY_MONO_EC2_PEM_KEY }}
   ECR_IAM_ACCESS_KEY: ${{ secrets.AWS_ECR_IAM_ACCESS_KEY }}
   ECR_IAM_SECRET_KEY: ${{ secrets.AWS_ECR_IAM_SECRET_ACCESS_KEY }}
-  IMAGE_TAG: dev-transport-server
+  IMAGE_TAG: transport-server
 
 permissions:
   contents: read
