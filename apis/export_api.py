@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-import uuid
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
@@ -37,7 +37,7 @@ def ics_export(user_id : int, calendar_id : int, db : Session = Depends(get_db))
     if not calendar or not user or calendar.is_deleted:
         return HTTPException(404, "캘린더 또는 유저가 없습니다!")
     
-    ics_file_name = f"{user.email}-{calendar.title}.ics"
+    ics_file_name = f"{uuid4()}-{calendar.title}.ics"
     
     # 캘린더 시작 
     ics_buf = f"""BEGIN:VCALENDAR
@@ -88,10 +88,11 @@ def ics_export(user_id : int, calendar_id : int, db : Session = Depends(get_db))
         """.replace("        ", "")
 
         # 옵션 항목인 설명과 장소는 있는 경우만 기입
-        description = f"DESCRIPTION:{ed.description}\n" if ed.description else ""
-        location = f"LOCATION:{ed.location}\n" if ed.location else ""
+        if ed.description:
+            ev_buf += f"DESCRIPTION:{ed.description.replace("\n", "\\n")}\n"
         
-        ev_buf += description + location
+        if ed.location:
+            ev_buf += f"LOCATION:{ed.location}\n"
         
         # 연결된 알람이 존재할 경우 입력
         if ed.alarm:
@@ -101,10 +102,11 @@ def ics_export(user_id : int, calendar_id : int, db : Session = Depends(get_db))
             TRIGGER:{alarm.alarm_trigger}
             """.replace("            ", "")
             
-            al_desc = f"DESCRIPTION:{alarm.description}\n" if alarm.description else ""
+            if alarm.description:
+                al_buf += f"DESCRIPTION:{alarm.description}\n"
             
             # 이벤트에 알람 본문 추가
-            ev_buf += al_buf + al_desc + "END:VALARM\n"
+            ev_buf += al_buf + "END:VALARM\n"
 
         # n번째 이벤트 끝, 캘린더 본문에 이벤트 추가
         ics_buf += ev_buf + "END:VEVENT\n"

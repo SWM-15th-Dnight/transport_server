@@ -81,11 +81,11 @@ def get_event_detail(component: Icalendar, event_main: EventMain, alarm: Alarm, 
     """
     created_at = component.get("CREATED").dt.astimezone(tz) if component.get("CREATED") else None
     last_modified = component.get("LAST-MODIFIED").dt.astimezone(tz) if component.get("LAST_MODIFIED") else None
-    event_description = str(component.get("DESCRIPTION"))
+    event_description = str(component.get("DESCRIPTION")) if component.get("DESCRIPTION") else None
     sequence = str(component.get("SEQUENCE"))
     status = str(component.get("STATUS"))
     transp = str(component.get("TRANSP"))
-    location = str(component.get("LOCATION"))
+    location = str(component.get("LOCATION")) if component.get("LOCATION") else None
     uid = str(component.get("UID"))
 
     event_detail = EventDetail(
