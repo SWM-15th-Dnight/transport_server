@@ -2,7 +2,7 @@ from uuid import uuid4
 import traceback
 import time
 
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from icalendar import Calendar as Icalendar
@@ -18,7 +18,7 @@ from .s3_module import s3_bucket
 router = APIRouter()
 
 @router.post("/import")
-async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Session = Depends(get_db)) -> ImportResonseDTO:
+async def import_data(user_id: int = Form(...), ics_file: UploadFile = File(...), db: Session = Depends(get_db)) -> ImportResonseDTO:
     """
     iCalendar 파일과 user id를 입력으로 받아, 해당 유저의 캘린더를 생성하고 ics 파일을 저장한 뒤, 실행 과정에 대한 로그를 쌓는다.
     
@@ -137,7 +137,7 @@ async def import_data(user_id: int, ics_file: UploadFile = File(...), db: Sessio
                     db.rollback()
                     
                     error_trace = traceback.format_exc().replace("\n", "").replace("  ", " ")
-                    error_log = error_trace[error_trace.index("line"):]    
+                    error_log = error_trace[error_trace.index("line"):]
                     failed_import_event = FailedImportEvent(import_id = import_id,
                                                             error_log = error_log)
                     

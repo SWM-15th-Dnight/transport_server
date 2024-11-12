@@ -4,4 +4,8 @@
 
 **.ics
 
+**/**.ics
+
 test.py
+
+**/.mypy_cache/**

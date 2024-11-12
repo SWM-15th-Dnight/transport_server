@@ -1,7 +1,6 @@
-from typing import Tuple, Union
-from datetime import date, datetime
+from typing import Tuple
+from datetime import datetime
 
-from fastapi import HTTPException
 from icalendar import Calendar as Icalendar
 from sqlalchemy.orm import Session
 import pytz
@@ -65,7 +64,9 @@ def get_event_main(component: Icalendar, calendar_id : int, tz: pytz.BaseTzInfo)
         end_at = end_at,
         priority = priority,
         repeat_rule = repeat_rule,
-        calendar_id = calendar_id)    
+        calendar_id = calendar_id,
+        is_deleted = 0,
+        color_set_id = 1,)
     
     return event_main
 
@@ -78,13 +79,13 @@ def get_event_detail(component: Icalendar, event_main: EventMain, alarm: Alarm, 
     
     대부분의 경우에서 에러가 발생하지 않겠으나, UID가 unique이므로, 반영이 안 될 수도 있음.
     """
-    created_at = component.get("CREATED").dt.astimezone(tz)
-    last_modified = component.get("LAST-MODIFIED").dt.astimezone(tz)
-    event_description = str(component.get("DESCRIPTION"))
+    created_at = component.get("CREATED").dt.astimezone(tz) if component.get("CREATED") else None
+    last_modified = component.get("LAST-MODIFIED").dt.astimezone(tz) if component.get("LAST_MODIFIED") else None
+    event_description = str(component.get("DESCRIPTION")) if component.get("DESCRIPTION") else None
     sequence = str(component.get("SEQUENCE"))
     status = str(component.get("STATUS"))
     transp = str(component.get("TRANSP"))
-    location = str(component.get("LOCATION"))
+    location = str(component.get("LOCATION")) if component.get("LOCATION") else None
     uid = str(component.get("UID"))
 
     event_detail = EventDetail(

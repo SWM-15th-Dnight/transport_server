@@ -32,6 +32,7 @@ class EventMain(Base):
     priority = mapped_column(Integer, nullable=False, default=5)
     repeat_rule = mapped_column(String(255), nullable=True)
     is_deleted = mapped_column(Integer, nullable=False)
+    color_set_id = mapped_column(Integer, nullable=False)
     
     calendar_id = mapped_column(Integer, ForeignKey("calendars.calendar_id"), nullable=False)
     
