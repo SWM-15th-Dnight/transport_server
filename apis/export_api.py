@@ -35,7 +35,7 @@ def ics_export(user_id : int, calendar_id : int, db : Session = Depends(get_db))
     user : None | User = db.query(User).get(user_id)
     
     if not calendar or not user or calendar.is_deleted:
-        return HTTPException(404, "캘린더 또는 유저가 없습니다!")
+        raise HTTPException(404, "캘린더 또는 유저가 없습니다!")
     
     ics_file_name = f"{uuid4()}-{calendar.title}.ics"
     
@@ -58,7 +58,7 @@ def ics_export(user_id : int, calendar_id : int, db : Session = Depends(get_db))
     e_count = 0
     
     if not events:
-        return HTTPException(404, "캘린더가 비어 있습니다!")
+        raise HTTPException(404, "캘린더가 비어 있습니다!")
     
     for em in events:
         
@@ -116,7 +116,7 @@ def ics_export(user_id : int, calendar_id : int, db : Session = Depends(get_db))
     ics_buf += "END:VCALENDAR"
     
     # 서버 로컬에 파일 저장
-    with open(ICS_DUMP_DIR_PATH+ics_file_name, '+w') as f:
+    with open(ICS_DUMP_DIR_PATH+ics_file_name, 'w') as f:
         f.write(ics_buf)
 
     # 방금 저장한 파일 읽어서 S3에 등록
@@ -132,7 +132,10 @@ def ics_export(user_id : int, calendar_id : int, db : Session = Depends(get_db))
     db.commit()
     db.close()
     
-    return FileResponse(ICS_DUMP_DIR_PATH+ics_file_name, media_type="text/plain", filename=ics_file_name)
+    print("===============================")
+    print(ICS_DUMP_DIR_PATH+ics_file_name)
+    
+    return FileResponse(ICS_DUMP_DIR_PATH+ics_file_name, media_type="text/calendar", filename=ics_file_name)
 
 # 각각의 타임존을 UTC로 통일
 def timezone_nomalize(date: datetime, timezone : str):
