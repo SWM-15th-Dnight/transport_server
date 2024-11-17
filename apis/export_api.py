@@ -15,8 +15,7 @@ from .s3_module import s3_bucket
 
 router = APIRouter()
 
-ICS_DUMP_DIR_PATH = os.path.dirname(os.path.abspath(__file__)) + "/../" + "ics_dump/"
-print(ICS_DUMP_DIR_PATH)
+ICS_DUMP_DIR_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/ics_dump/"
 
 @router.get("/export", status_code=200, response_class=FileResponse)
 def ics_export(user_id : int, calendar_id : int, db : Session = Depends(get_db)):
