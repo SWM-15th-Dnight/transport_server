@@ -80,7 +80,7 @@ jobs:
           echo "=====.env 파일 생성 완료====="
         
           # Private EC2에 env 파일과 키 파일 전송
-          ehco "=====.env 파일 및 pem key 전송====="
+          echo "=====.env 파일 및 pem key 전송====="
           scp -i PRIVATE_TRANSPORT_key.pem -o StrictHostKeyChecking=no .env PRIVATE_TRANSPORT_key.pem ${{ env.PRIVATE_TRANSPORT_USER }}@${{ env.PRIVATE_TRANSPORT_HOST }}:/home/${{ env.PRIVATE_TRANSPORT_USER }}/
           echo "=====전송 완료====="
 
